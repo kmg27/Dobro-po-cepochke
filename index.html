@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Добро по цепочке</title>
+<meta name="description" content="Расскажите о своём добром деле — на дереве добра вырастет листочек, а цепочка пойдёт дальше.">
+<meta property="og:title" content="Добро по цепочке">
+<meta property="og:description" content="Маленькое добро — большое дерево. Каждое доброе дело становится листочком.">
+<link rel="icon" id="favicon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --sky:#A8D8F0; --sky-light:#E3F3FC; --cream:#FFF9F2; --peach:#F7C6B0; --peach-deep:#EFAE93;
+  --leaf:#BFE3C0; --lav:#DCD3F2; --pink:#F8D7DF; --trunk:#C9A88B; --trunk-dark:#B08D70;
+  --text:#3F4A5A; --muted:#5F6B7C; --surface:#FFFFFF; --line:#EADFD3; --ink-on-sky:#2F4058;
+  --sky-top:#9DD3EF; --sky-bottom:#EAF6FD; --ground:#C6E5BC; --shadow:0 10px 30px rgba(80,110,140,.14);
+  --radius-lg:28px; --radius-md:18px; --radius-sm:12px;
+  color-scheme:light;
+}
+body[data-season="spring"]{--sky-top:#B6E0F5;--sky-bottom:#F4FAFE;--ground:#D2EDC8}
+body[data-season="summer"]{--sky-top:#8CCBEE;--sky-bottom:#E3F3FC;--ground:#BFE3B0}
+body[data-season="autumn"]{--sky-top:#A6CDE5;--sky-bottom:#F7EFE5;--ground:#EAD7B5}
+body[data-season="winter"]{--sky-top:#C8E1F0;--sky-bottom:#F5F9FC;--ground:#F7FAFD}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --cream:#1C2233; --surface:#262E42; --text:#E8ECF4; --muted:#B3BCCD; --line:#38425C;
+    --ink-on-sky:#EEF3FB; --shadow:0 10px 30px rgba(0,0,0,.35); --peach:#F2B79E; --peach-deep:#F7C6B0;
+    color-scheme:dark;
+  }
+  :root:not([data-theme="light"]) body[data-season]{--sky-top:#18233F;--sky-bottom:#3A4C7A;--ground:#34405E}
+  :root:not([data-theme="light"]) body[data-season="winter"]{--ground:#5A6788}
+}
+:root[data-theme="dark"]{
+  --cream:#1C2233; --surface:#262E42; --text:#E8ECF4; --muted:#B3BCCD; --line:#38425C;
+  --ink-on-sky:#EEF3FB; --shadow:0 10px 30px rgba(0,0,0,.35); color-scheme:dark;
+}
+:root[data-theme="dark"] body[data-season]{--sky-top:#18233F;--sky-bottom:#3A4C7A;--ground:#34405E}
+
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-behavior:smooth;scroll-padding-top:calc(env(safe-area-inset-top,0px) + 80px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--cream);color:var(--text);font-family:"Nunito","Segoe UI",Roboto,Arial,sans-serif;font-size:18px;line-height:1.6;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:"Comfortaa","Nunito",sans-serif;font-weight:700;line-height:1.2;margin:0}
+h2{font-size:clamp(1.6rem,3.2vw,2.3rem);margin-bottom:.6rem}
+p{margin:0 0 1rem}
+a{color:inherit}
+img,svg{max-width:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid #5AA9D6;outline-offset:3px;border-radius:8px}
+.wrap{width:min(1160px,100% - 40px);margin-inline:auto}
+.lead{color:var(--muted);max-width:60ch}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* Кнопки */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border:0;border-radius:999px;padding:.85rem 1.6rem;font-weight:800;font-size:1rem;cursor:pointer;text-decoration:none;transition:background .2s,transform .15s}
+.btn:active{transform:scale(.97)}
+.btn-main{background:var(--peach);color:#3F4A5A}
+.btn-main:hover{background:var(--peach-deep)}
+.btn-soft{background:rgba(255,255,255,.7);color:#2F4058;border:2px solid rgba(255,255,255,.9)}
+.btn-soft:hover{background:#fff}
+.btn-line{background:transparent;border:2px solid var(--line);color:var(--text);padding:.6rem 1.1rem;font-size:.92rem}
+.btn-line:hover{border-color:var(--sky)}
+.chip{border:0;background:rgba(255,255,255,.65);color:#2F4058;border-radius:999px;padding:.4rem .9rem;font-weight:700;font-size:.9rem;cursor:pointer}
+.chip[aria-pressed="true"]{background:#fff;box-shadow:0 0 0 2px var(--sky) inset}
+
+/* Шапка */
+.top{position:sticky;top:0;z-index:50;padding-top:env(safe-area-inset-top,0px);background:color-mix(in srgb,var(--cream) 78%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.top .wrap{display:flex;align-items:center;gap:1.2rem;min-height:68px}
+.brand{display:flex;align-items:center;gap:.7rem;text-decoration:none;font-family:"Comfortaa",sans-serif;font-weight:700;font-size:1.15rem;white-space:nowrap}
+.brand svg{width:44px;height:44px;flex:none}
+.nav{display:flex;gap:1.3rem;margin-left:auto}
+.nav a{text-decoration:none;font-weight:700;font-size:.98rem;color:var(--muted)}
+.nav a:hover{color:var(--text)}
+.counter{font-size:.9rem;color:var(--muted);white-space:nowrap}
+.counter b{color:var(--text)}
+.burger{display:none;margin-left:auto;border:0;background:transparent;font-size:1.6rem;cursor:pointer;padding:.3rem .6rem}
+@media (max-width:900px){
+  .counter{display:none}
+}
+@media (max-width:760px){
+  .burger{display:block}
+  .nav{display:none;position:absolute;left:0;right:0;top:100%;flex-direction:column;gap:0;background:var(--cream);border-bottom:1px solid var(--line);padding:.5rem 20px 1rem}
+  .nav.open{display:flex}
+  .nav a{padding:.7rem 0;border-bottom:1px solid var(--line)}
+}
+
+/* Небо + дерево */
+.sky{position:relative;overflow:hidden;background:linear-gradient(180deg,var(--sky-top) 0%,var(--sky-bottom) 78%,var(--cream) 100%);padding:3.2rem 0 2rem;color:var(--ink-on-sky)}
+.clouds{position:absolute;inset:0;pointer-events:none}
+.cloud{position:absolute;opacity:.85;animation:drift linear infinite}
+.cloud svg{display:block}
+@keyframes drift{from{transform:translateX(-30vw)}to{transform:translateX(130vw)}}
+.stars{position:absolute;inset:0;pointer-events:none;display:none}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .stars{display:block}}
+:root[data-theme="dark"] .stars{display:block}
+.star{position:absolute;width:3px;height:3px;border-radius:50%;background:#fff;opacity:.7;animation:twinkle 3s ease-in-out infinite}
+@keyframes twinkle{50%{opacity:.2}}
+.hero-text{position:relative;text-align:center;max-width:780px;margin:0 auto 1rem}
+.hero-text h1{font-size:clamp(2.2rem,6vw,4.2rem);letter-spacing:-.01em;margin-bottom:1rem}
+.hero-text p{font-size:clamp(1.05rem,2vw,1.25rem);max-width:46ch;margin:0 auto 1.6rem;opacity:.92}
+.hero-actions{display:flex;flex-wrap:wrap;gap:.8rem;justify-content:center}
+.inspired-banner{position:relative;max-width:640px;margin:1.6rem auto 0;background:rgba(255,255,255,.85);color:#3F4A5A;border-radius:var(--radius-md);padding:1rem 1.2rem;box-shadow:var(--shadow);text-align:left}
+.inspired-banner strong{display:block;font-family:Comfortaa,sans-serif;margin-bottom:.3rem}
+
+.tree-wrap{position:relative;margin-top:1rem}
+#tree{display:block;width:100%;height:auto;max-height:78vh;touch-action:none;cursor:grab;user-select:none}
+#tree.dragging{cursor:grabbing}
+#tree .br{stroke:var(--trunk);stroke-linecap:round}
+#tree .snowcap{stroke:#fff;stroke-linecap:round;opacity:.95}
+#tree .leaf{cursor:pointer}
+#tree .leaf.ghost{cursor:default;pointer-events:none}
+#tree .leaf .in{transform-box:fill-box;transform-origin:50% 100%}
+#tree .leaf path{transform-box:fill-box;transform-origin:50% 100%;stroke:rgba(70,90,70,.18);stroke-width:.8;transition:opacity .25s}
+#tree.sway .leaf:not(.ghost) path{animation:sway 4.5s ease-in-out infinite;animation-delay:var(--d,0s)}
+@keyframes sway{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+#tree .leaf:not(.ghost):hover path{filter:brightness(1.07)}
+#tree.focus .leaf:not(.hl) path{opacity:.22}
+#tree .leaf.hl path{stroke:#fff;stroke-width:1.6}
+#tree .leaf.born .in{animation:born 1.4s cubic-bezier(.2,1.4,.4,1) both}
+#tree .leaf.shine path{filter:url(#glow)}
+@keyframes born{from{transform:scale(0)}to{transform:scale(1)}}
+.bird{animation:fly 26s linear infinite}
+@keyframes fly{from{transform:translateX(-200px)}to{transform:translateX(1250px)}}
+.butterfly{animation:flutter 7s ease-in-out infinite}
+@keyframes flutter{0%,100%{transform:translate(0,0)}25%{transform:translate(30px,-25px)}50%{transform:translate(60px,5px)}75%{transform:translate(25px,20px)}}
+.fx{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.fx span{position:absolute;top:-20px;animation:fall linear infinite}
+.fx .flake{width:7px;height:7px;border-radius:50%;background:#fff;box-shadow:0 0 4px rgba(255,255,255,.8)}
+.fx .fleaf{width:14px;height:14px;border-radius:0 70% 0 70%;opacity:.85}
+@keyframes fall{from{transform:translate(0,0) rotate(0)}to{transform:translate(60px,110%) rotate(320deg);top:100%}}
+
+.tree-controls{position:relative;display:flex;flex-wrap:wrap;gap:.8rem 1.6rem;align-items:center;justify-content:center;margin-top:.6rem;color:var(--text)}
+.ctrl-group{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem}
+.ctrl-group > span{font-weight:700;font-size:.92rem;margin-right:.2rem}
+.stage{position:relative;text-align:center;margin:1rem auto 0;max-width:60ch;color:var(--text)}
+.stage b{font-family:Comfortaa,sans-serif}
+.zoom{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:6px}
+.zoom button{width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.8);color:#2F4058;font-size:1.3rem;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.leaf-list{position:relative;margin:1rem auto 0;max-width:760px;color:var(--text)}
+.leaf-list summary{cursor:pointer;font-weight:700;text-align:center}
+.leaf-list ol{max-height:300px;overflow:auto;background:var(--surface);border-radius:var(--radius-md);padding:1rem 1rem 1rem 2.4rem;margin-top:.6rem}
+
+/* Карточка листочка */
+.leaf-card{position:absolute;z-index:20;width:min(340px,calc(100% - 20px));background:var(--surface);color:var(--text);border-radius:var(--radius-md);box-shadow:var(--shadow);padding:1.1rem 1.2rem 1rem;display:none}
+.leaf-card.open{display:block}
+.leaf-card .close{position:absolute;right:8px;top:6px;border:0;background:transparent;font-size:1.4rem;cursor:pointer;color:var(--muted);width:36px;height:36px}
+.meta{font-size:.88rem;color:var(--muted)}
+.cat-tag{display:inline-flex;align-items:center;gap:.35rem;font-size:.85rem;font-weight:700;border-radius:999px;padding:.15rem .7rem;color:#3F4A5A}
+@media (max-width:640px){
+  .leaf-card{position:fixed;left:10px!important;right:10px;top:auto!important;bottom:calc(10px + env(safe-area-inset-bottom,0px));width:auto}
+}
+
+/* Секции */
+section.block{padding:4.5rem 0}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;margin-top:2rem;counter-reset:s}
+.step{position:relative;padding-top:3.4rem}
+.step::before{counter-increment:s;content:counter(s);position:absolute;top:0;left:0;width:2.6rem;height:2.6rem;border-radius:50%;display:grid;place-items:center;font-family:Comfortaa,sans-serif;font-weight:700;background:var(--sky-light);color:#2F4058}
+.step h3{font-size:1.2rem;margin-bottom:.4rem}
+.step p{color:var(--muted)}
+@media (max-width:760px){.steps{grid-template-columns:1fr;gap:1.4rem}}
+
+.feed{display:flex;gap:1.1rem;overflow-x:auto;scroll-snap-type:x mandatory;padding:1rem 4px 1.4rem;margin-top:1rem}
+.note{flex:0 0 min(300px,82vw);scroll-snap-align:start;background:var(--surface);border-radius:var(--radius-md);padding:1.2rem 1.2rem 1rem;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:.6rem;border-top:6px solid var(--c)}
+.note p{margin:0;flex:1}
+.note .row{display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap}
+.link-btn{border:0;background:transparent;padding:0;font-weight:800;color:var(--text);text-decoration:underline;text-decoration-color:var(--peach-deep);text-underline-offset:4px;text-decoration-thickness:2px;cursor:pointer;font-size:.95rem}
+.report{border:0;background:transparent;color:var(--muted);font-size:.82rem;cursor:pointer;text-decoration:underline}
+
+/* Карта */
+.map-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:1rem}
+.map-tools{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+.map-tools select{border:2px solid var(--line);background:var(--surface);border-radius:999px;padding:.5rem 1rem;max-width:100%}
+#map{height:min(520px,70vh);border-radius:var(--radius-lg);margin-top:1.4rem;overflow:hidden;box-shadow:var(--shadow);background:var(--sky-light);z-index:1}
+.map-fallback{display:grid;place-items:center;height:100%;color:#3F4A5A;padding:2rem;text-align:center}
+.leaflet-container{font-family:"Nunito",sans-serif;font-size:15px}
+.arc{stroke-dasharray:7 9;animation:dash 1.4s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-32}}
+.leaflet-popup-content{max-width:260px}
+.leaflet-popup-content ul{padding-left:1.1rem;margin:.4rem 0 0}
+
+/* Форма */
+.form-grid{display:grid;grid-template-columns:1fr 1.25fr;gap:3rem;align-items:start}
+@media (max-width:860px){.form-grid{grid-template-columns:1fr;gap:1.8rem}}
+.form{background:var(--surface);border-radius:var(--radius-lg);padding:2rem;box-shadow:var(--shadow);display:grid;gap:1.2rem}
+.field label,.field legend{display:block;font-weight:800;margin-bottom:.4rem}
+.field .hint{font-size:.88rem;color:var(--muted);margin-top:.3rem}
+.field input[type=text],.field textarea{width:100%;border:2px solid var(--line);background:var(--cream);border-radius:var(--radius-sm);padding:.8rem 1rem;font-size:1.05rem}
+.field textarea{min-height:130px;resize:vertical}
+.field input:focus,.field textarea:focus{border-color:var(--sky);outline:none}
+fieldset{border:0;margin:0;padding:0}
+.cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.5rem}
+.cats label{display:flex;align-items:center;gap:.5rem;border:2px solid var(--line);border-radius:var(--radius-sm);padding:.55rem .7rem;cursor:pointer;font-weight:600;font-size:.95rem;margin:0}
+.cats input{position:absolute;opacity:0}
+.cats input:checked + label{border-color:var(--c);background:color-mix(in srgb,var(--c) 30%,transparent)}
+.cats input:focus-visible + label{outline:3px solid #5AA9D6;outline-offset:2px}
+.dot{width:14px;height:14px;border-radius:50%;background:var(--c);flex:none}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media (max-width:560px){.two{grid-template-columns:1fr}}
+.agree{display:flex;gap:.6rem;align-items:flex-start;font-size:.95rem}
+.agree input{width:20px;height:20px;margin-top:.2rem;accent-color:#7BBBE0}
+.error{color:#B24A3B;font-weight:700;font-size:.95rem;min-height:1.2em;margin:0}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .error{color:#FFB3A6}}
+.inspire-card{background:var(--sky-light);color:#2F4058;border-radius:var(--radius-md);padding:1.1rem 1.2rem;margin-top:1.2rem}
+.inspire-card strong{font-family:Comfortaa,sans-serif;display:block;margin-bottom:.3rem}
+
+/* Подвал */
+footer{background:var(--surface);padding:3rem 0 calc(2rem + env(safe-area-inset-bottom,0px));margin-top:2rem}
+.foot{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:2rem}
+@media (max-width:760px){.foot{grid-template-columns:1fr}}
+footer details{margin-bottom:.6rem}
+footer summary{cursor:pointer;font-weight:700}
+footer details p{font-size:.95rem;color:var(--muted);margin-top:.5rem}
+.share{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.6rem}
+
+/* Модальное окно */
+dialog{border:0;border-radius:var(--radius-lg);padding:0;width:min(520px,calc(100% - 24px));background:var(--surface);color:var(--text);box-shadow:0 20px 60px rgba(40,60,90,.3)}
+dialog::backdrop{background:rgba(60,80,110,.35);backdrop-filter:blur(3px)}
+.dlg{padding:2rem 1.8rem 1.6rem;text-align:center}
+.dlg .big-heart{width:72px;height:72px;margin:0 auto .8rem;display:block}
+.dlg h3{font-size:1.45rem;margin-bottom:.8rem}
+.dlg .warm{font-size:1.15rem;margin-bottom:1rem}
+.code{font-family:Comfortaa,sans-serif;font-size:1.6rem;font-weight:700;letter-spacing:.12em;background:var(--sky-light);color:#2F4058;border-radius:var(--radius-sm);padding:.4rem 1rem;display:inline-block;margin:.2rem 0 .8rem}
+.copy-row{display:flex;gap:.5rem;margin-bottom:1rem}
+.copy-row input{flex:1;min-width:0;border:2px solid var(--line);border-radius:999px;padding:.55rem 1rem;background:var(--cream);font-size:.9rem}
+.toast{transition:transform .3s,opacity .3s;position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(200%);opacity:0;visibility:hidden;background:#3F4A5A;color:#fff;padding:.8rem 1.3rem;border-radius:999px;font-weight:700;z-index:100;max-width:calc(100% - 30px);text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1;visibility:visible}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  html{scroll-behavior:auto}
+  .fx,.cloud{display:none}
+}
+</style>
+</head>
+<body data-season="summer">
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#tree-section" aria-label="Добро по цепочке, на главную">
+      <span id="logoTop"></span>Добро по цепочке
+    </a>
+    <nav class="nav" id="nav" aria-label="Разделы сайта">
+      <a href="#tree-section">Дерево</a>
+      <a href="#map-section">Карта</a>
+      <a href="#share">Рассказать о добре</a>
+      <a href="#about">О проекте</a>
+    </nav>
+    <div class="counter" id="counter" aria-live="polite"></div>
+    <button class="burger" id="burger" aria-label="Открыть меню" aria-expanded="false" aria-controls="nav">☰</button>
+  </div>
+</header>
+
+<main>
+<section class="sky" id="tree-section" aria-labelledby="h1">
+  <div class="stars" id="stars" aria-hidden="true"></div>
+  <div class="clouds" id="clouds" aria-hidden="true"></div>
+  <div class="wrap">
+    <div class="hero-text">
+      <h1 id="h1">Маленькое добро — большое дерево</h1>
+      <p>Сделай доброе дело, расскажи о нём — и пусть добро идёт дальше по цепочке. Каждый поступок становится листочком на этом дереве.</p>
+      <div class="hero-actions">
+        <a class="btn btn-main" href="#share">Рассказать о своём добром деле</a>
+        <button class="btn btn-soft" id="findMine" type="button">Найти мой листочек</button>
+      </div>
+      <div class="inspired-banner" id="heroInspired" hidden></div>
+    </div>
+
+    <div class="tree-wrap" id="treeWrap">
+      <svg id="tree" class="sway" viewBox="0 0 1000 780" role="img" aria-label="Дерево добра. Каждый листочек — доброе дело. Нажмите на листочек, чтобы прочитать.">
+        <defs>
+          <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
+            <feGaussianBlur stdDeviation="4" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <radialGradient id="crownMass">
+            <stop offset="0" stop-color="var(--crown,#BFE3C0)" stop-opacity=".55"/>
+            <stop offset="1" stop-color="var(--crown,#BFE3C0)" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <g id="gSky"></g>
+        <g id="gGround"></g>
+        <g id="gMass"></g>
+        <g id="gBranches"></g>
+        <g id="gSnow"></g>
+        <g id="gLeaves"></g>
+        <g id="gDeco"></g>
+      </svg>
+      <div class="fx" id="fx" aria-hidden="true"></div>
+      <div class="zoom">
+        <button type="button" id="zIn" aria-label="Приблизить дерево">+</button>
+        <button type="button" id="zOut" aria-label="Отдалить дерево">−</button>
+        <button type="button" id="zReset" aria-label="Показать дерево целиком">⤢</button>
+      </div>
+      <div class="leaf-card" id="leafCard" role="dialog" aria-live="polite"></div>
+    </div>
+
+    <p class="stage" id="stage"></p>
+
+    <div class="tree-controls">
+      <div class="ctrl-group" role="group" aria-label="Время года">
+        <span>Время года:</span>
+        <button class="chip" data-season="spring">Весна</button>
+        <button class="chip" data-season="summer">Лето</button>
+        <button class="chip" data-season="autumn">Осень</button>
+        <button class="chip" data-season="winter">Зима</button>
+      </div>
+      <div class="ctrl-group" role="group" aria-label="Заглянуть в будущее дерева">
+        <span>Каким станет дерево:</span>
+        <button class="chip" data-preview="0" aria-pressed="true">Сейчас</button>
+        <button class="chip" data-preview="500">500 дел</button>
+        <button class="chip" data-preview="2500">2 500</button>
+        <button class="chip" data-preview="12000">10 000+</button>
+      </div>
+    </div>
+
+    <details class="leaf-list">
+      <summary>Показать все добрые дела списком</summary>
+      <ol id="leafList"></ol>
+    </details>
+  </div>
+</section>
+
+<section class="block" id="how">
+  <div class="wrap">
+    <h2>Как это работает</h2>
+    <div class="steps">
+      <div class="step"><h3>Сделайте доброе дело</h3><p>Любое, даже самое маленькое: помогите соседу, накормите кота, скажите тёплое слово.</p></div>
+      <div class="step"><h3>Расскажите о нём здесь</h3><p>Пара предложений, без регистрации. На дереве сразу вырастет ваш листочек.</p></div>
+      <div class="step"><h3>Передайте ссылку дальше</h3><p>Отправьте её другу. Когда он сделает своё доброе дело, цепочка продолжится, а на карте появится новая линия.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="feed-section" style="padding-top:0">
+  <div class="wrap">
+    <h2>Недавние добрые дела</h2>
+    <p class="lead">Вдохновитесь и продолжите любую цепочку своим поступком.</p>
+    <div class="feed" id="feed" tabindex="0" aria-label="Лента последних добрых дел"></div>
+  </div>
+</section>
+
+<section class="block" id="map-section" style="padding-top:1rem">
+  <div class="wrap">
+    <div class="map-head">
+      <div>
+        <h2>Карта добра</h2>
+        <p class="lead" style="margin:0">Линии показывают, как добро переходит из города в город. Мы отмечаем только город, никаких адресов.</p>
+      </div>
+      <div class="map-tools">
+        <label class="sr-only" for="chainSelect">Какие цепочки показать</label>
+        <select id="chainSelect"></select>
+      </div>
+    </div>
+    <div id="map"><div class="map-fallback">Загружаем карту…</div></div>
+  </div>
+</section>
+
+<section class="block" id="share">
+  <div class="wrap form-grid">
+    <div>
+      <h2>Расскажите о своём добром деле</h2>
+      <p class="lead">Регистрация не нужна. После публикации вы получите ссылку, чтобы передать добро дальше.</p>
+      <p class="lead">Пожалуйста, не указывайте телефоны, адреса и имена людей, которым помогли. Пусть их история останется их тайной.</p>
+      <div class="inspire-card" id="inspireCard" hidden></div>
+    </div>
+
+    <form class="form" id="deedForm" novalidate>
+      <div class="field">
+        <label for="fText">Что доброго вы сделали?</label>
+        <textarea id="fText" maxlength="500" required placeholder="Например: помогла соседке донести сумки до пятого этажа"></textarea>
+        <div class="hint"><span id="fCount">0</span> из 500 знаков, минимум 10</div>
+      </div>
+      <fieldset class="field">
+        <legend>Категория</legend>
+        <div class="cats" id="cats"></div>
+      </fieldset>
+      <div class="two">
+        <div class="field">
+          <label for="fName">Ваше имя</label>
+          <input type="text" id="fName" maxlength="40" placeholder="Добрый человек" autocomplete="given-name">
+          <div class="hint">Можно не указывать</div>
+        </div>
+        <div class="field">
+          <label for="fCity">Город</label>
+          <input type="text" id="fCity" list="cityList" required placeholder="Начните вводить" autocomplete="off">
+          <datalist id="cityList"></datalist>
+          <div class="hint">Только город, без адреса</div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="fFrom">Код вдохновившего дела</label>
+        <input type="text" id="fFrom" maxlength="6" placeholder="Если вас вдохновил чужой поступок" style="text-transform:uppercase;letter-spacing:.1em">
+        <div class="hint">Подставится сам, если вы пришли по ссылке друга</div>
+      </div>
+      <label class="agree"><input type="checkbox" id="fAgree"> <span>Я согласен с <a href="#rules">правилами сообщества</a> и понимаю, что моё доброе дело увидят другие люди</span></label>
+      <p class="error" id="fError" role="alert"></p>
+      <button class="btn btn-main" type="submit" style="justify-self:start">Опубликовать доброе дело</button>
+    </form>
+  </div>
+</section>
+</main>
+
+<footer id="about">
+  <div class="wrap foot">
+    <div>
+      <div class="brand" style="margin-bottom:.8rem"><span id="logoBottom"></span>Добро по цепочке</div>
+      <p style="color:var(--muted);font-size:.95rem">Место, где маленькие добрые дела собираются в большое дерево. Мы верим, что одно доброе дело всегда рождает следующее.</p>
+    </div>
+    <div>
+      <details id="rules"><summary>Правила сообщества</summary>
+        <p>Рассказывайте только о настоящих добрых делах. Без грубых слов, рекламы и ссылок. Не публикуйте телефоны, адреса и личные данные других людей. Дела, на которые пожаловались, скрываются до проверки.</p></details>
+      <details><summary>Конфиденциальность</summary>
+        <p>Мы храним только текст, имя по желанию, город и категорию. Точное местоположение не определяется и не сохраняется.</p></details>
+      <details><summary>Контакты</summary>
+        <p>По вопросам и предложениям: hello@dobro-po-cepochke.ru</p></details>
+    </div>
+    <div>
+      <strong>Поделиться сайтом</strong>
+      <div class="share" id="siteShare"></div>
+    </div>
+  </div>
+</footer>
+
+<dialog id="dlg" aria-labelledby="dlgTitle">
+  <div class="dlg" id="dlgBody"></div>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+(() => {
+/* ---------- Справочники ---------- */
+const CATS = {
+  help:    {name:'Помощь людям',       color:'#A9DDAB'},
+  animals: {name:'Забота о животных',  color:'#F5B99C'},
+  nature:  {name:'Природа и экология', color:'#9EDCC8'},
+  care:    {name:'Пожилым и детям',    color:'#C8BBEE'},
+  word:    {name:'Доброе слово',       color:'#F4B5C6'},
+  other:   {name:'Другое',             color:'#F3DC8E'}
+};
+const CITIES = {
+ 'Москва':[55.7558,37.6173],'Санкт-Петербург':[59.9343,30.3351],'Казань':[55.7963,49.1088],'Тула':[54.193,37.6177],
+ 'Воронеж':[51.6608,39.2003],'Ростов-на-Дону':[47.2357,39.7015],'Краснодар':[45.0355,38.9753],'Сочи':[43.6028,39.7342],
+ 'Новосибирск':[55.0084,82.9357],'Томск':[56.4846,84.9476],'Красноярск':[56.0153,92.8932],'Иркутск':[52.2869,104.305],
+ 'Улан-Удэ':[51.8335,107.5841],'Петрозаводск':[61.7849,34.3469],'Великий Новгород':[58.5228,31.2698],'Псков':[57.8136,28.3496],
+ 'Минск':[53.9006,27.559],'Екатеринбург':[56.8389,60.6057],'Челябинск':[55.1644,61.4368],'Пермь':[58.0105,56.2502],
+ 'Уфа':[54.7388,55.9721],'Самара':[53.1959,50.1002],'Саратов':[51.5336,46.0343],'Владивосток':[43.1155,131.8855],
+ 'Хабаровск':[48.4802,135.0719],'Алматы':[43.222,76.8512],'Астана':[51.1694,71.4491],'Омск':[54.9885,73.3242],
+ 'Нижний Новгород':[56.2965,43.9361],'Ярославль':[57.6261,39.8845],'Калининград':[54.7104,20.4522],'Мурманск':[68.9585,33.0827],
+ 'Архангельск':[64.5399,40.5152],'Волгоград':[48.708,44.5133],'Тбилиси':[41.7151,44.8271],'Ереван':[40.1792,44.4991],
+ 'Тюмень':[57.1522,65.5272],'Иваново':[57.0004,40.9739],'Барнаул':[53.3548,83.7698],'Калуга':[54.5293,36.2754],
+ 'Смоленск':[54.7826,32.0453],'Бишкек':[42.8746,74.5698],'Кемерово':[55.3547,86.0873],'Оренбург':[51.7682,55.0969],
+ 'Ижевск':[56.8526,53.2045],'Тверь':[56.8587,35.9176],'Владимир':[56.129,40.4066],'Рязань':[54.6269,39.6916],
+ 'Курск':[51.7304,36.1926],'Белгород':[50.5997,36.5983],'Липецк':[52.6031,39.5708],'Пенза':[53.1959,45.0183],
+ 'Ульяновск':[54.3142,48.4031],'Махачкала':[42.9849,47.5047],'Ставрополь':[45.0428,41.9734],'Якутск':[62.0355,129.6755],
+ 'Ташкент':[41.2995,69.2401],'Баку':[40.4093,49.8671],'Кишинёв':[47.0105,28.8638],'Чебоксары':[56.1439,47.2489],
+ 'Киров':[58.6036,49.668],'Вологда':[59.2205,39.8915],'Сургут':[61.254,73.3962],'Севастополь':[44.6167,33.5254]
+};
+const SEED = [
+ ['KZ7QMA',null,'help','Алия','Казань',40,'Помогла соседке-пенсионерке донести сумки с рынка до пятого этажа. Она угостила меня чаем с чак-чаком.'],
+ ['MS4RTE','KZ7QMA','word','Добрый человек','Москва',36,'Прочитал историю про сумки и написал своей бывшей учительнице, как много она для меня сделала. Она ответила, что плакала.'],
+ ['TL9WPB','MS4RTE','animals','Игорь','Тула',31,'Отвёз в приют три мешка корма, которые собрали всем подъездом.'],
+ ['VR2HXN','TL9WPB','care','Марина Петровна','Воронеж',27,'Связала шесть пар варежек для малышей из дома ребёнка.'],
+ ['RN6CJS','VR2HXN','help','Тимур','Ростов-на-Дону',21,'Помог незнакомому парню подтолкнуть заглохшую машину на перекрёстке.'],
+ ['KR8LDY','RN6CJS','nature','Света','Краснодар',14,'Вместе с дочкой посадили во дворе две липы.'],
+ ['SC3FGU','KR8LDY','word','Добрый человек','Сочи',5,'Оставил записку «Вы прекрасно работаете» дворнику на набережной и купил ему кофе.'],
+ ['NS5ZKA',null,'nature','Дмитрий','Новосибирск',33,'Собрали с друзьями мусор на берегу Обского моря. Получилось двенадцать мешков.'],
+ ['TM2YBV','NS5ZKA','nature','Аня','Томск',28,'Устроила сбор старых батареек в нашем общежитии.'],
+ ['KJ7PEX','TM2YBV','help','Сергей','Красноярск',22,'Бесплатно починил велосипед мальчишке из соседнего двора.'],
+ ['IR4QWN','KJ7PEX','care','Оксана','Иркутск',15,'Почитала вслух книги в отделении детской больницы.'],
+ ['UU8MRH','IR4QWN','other','Баир','Улан-Удэ',6,'Научил бабушку пользоваться видеосвязью, теперь она видит внуков каждый вечер.'],
+ ['SP3NVA',null,'word','Катя','Санкт-Петербург',38,'Сказала кондуктору в трамвае, что у неё красивая улыбка. Она улыбалась ещё три остановки.'],
+ ['PZ6KTB','SP3NVA','help','Добрый человек','Петрозаводск',30,'Помог пожилому соседу сложить дрова на зиму.'],
+ ['NV9DLC','PZ6KTB','animals','Роман','Великий Новгород',24,'Пристроил найденного котёнка в добрую семью.'],
+ ['PS2BRW','NV9DLC','care','Людмила','Псков',12,'Сводила в театр троих детей из многодетной семьи по соседству.'],
+ ['MN7HSE','SP3NVA','word','Павел','Минск',19,'Написал благодарственный отзыв врачу, который лечил маму.'],
+ ['EK4GTA',null,'help','Ольга','Екатеринбург',35,'Отдала зимнюю одежду, из которой выросли дети, в фонд помощи семьям.'],
+ ['CH8RVK','EK4GTA','care','Николай','Челябинск',29,'Помог пожилой женщине записаться к врачу через интернет.'],
+ ['PR3XQL','CH8RVK','animals','Лиза','Пермь',23,'Каждую субботу выгуливаю собак из приюта.'],
+ ['UF6MNB','PR3XQL','nature','Айдар','Уфа',17,'Повесил в парке пять кормушек для птиц.'],
+ ['SM9ZPC','UF6MNB','help','Добрый человек','Самара',10,'Оплатил продукты женщине, у которой не прошла карта на кассе.'],
+ ['SR2KWD','SM9ZPC','word','Вера','Саратов',3,'Позвонила подруге, с которой не говорили два года, и просто сказала, что скучаю.'],
+ ['VL5TJE',null,'nature','Андрей','Владивосток',26,'Убрали с сыном пластик в маленькой бухте на Русском острове.'],
+ ['HB8CNF','VL5TJE','help','Галина','Хабаровск',11,'Впервые в жизни сдала кровь. Оказалось, совсем не страшно.'],
+ ['AL3PRG',null,'care','Динара','Алматы',32,'Испекла пироги и отнесла в дом престарелых.'],
+ ['AS7LKH','AL3PRG','word','Ерлан','Астана',20,'Поблагодарил водителя автобуса за аккуратную езду. Он помахал всем пассажирам.'],
+ ['OM4VDJ','AS7LKH','help','Маша','Омск',8,'Помогла иностранному студенту найти общежитие и проводила до двери.'],
+ ['NN6QRA',null,'animals','Артём','Нижний Новгород',25,'Отвёз к ветеринару голубя со сломанным крылом, а через месяц выпустил.'],
+ ['YR2MWB',null,'other','Добрый человек','Ярославль',18,'Оставил в библиотеке двадцать своих книг для всех желающих.'],
+ ['KG9HSC',null,'nature','Ирина','Калининград',16,'Посадила на балконе цветы для пчёл.'],
+ ['MU5ZTD',null,'care','Степан','Мурманск',13,'Провёл бесплатный урок шахмат для ребят в школе.'],
+ ['AR8PJE',null,'word','Наташа','Архангельск',9,'Подписала открытки всем соседям по подъезду с пожеланием тёплой осени.'],
+ ['VG3LXF',null,'help','Олег','Волгоград',7,'Подвёз до больницы пожилого мужчину, который не мог дождаться такси.'],
+ ['TB6KQG',null,'other','Нино','Тбилиси',4,'Научила соседских детей печь хачапури.'],
+ ['YE2RMH',null,'care','Ани','Ереван',2,'Помогла однокласснице сына подготовиться к контрольной по математике.'],
+ ['TU7WNJ',null,'nature','Кирилл','Тюмень',1,'Отнёс в пункт переработки целый мешок пластиковых крышек.'],
+ ['IV4BSK',null,'word','Добрый человек','Иваново',12,'Похвалил девушку-курьера. Она сказала, что это лучший момент её дня.'],
+ ['BR9DTL',null,'animals','Юля','Барнаул',20,'Отвезла в приют старые одеяла и полотенца.'],
+ ['KL5FHM',null,'help','Максим','Калуга',6,'Помог разгрузить машину с вещами для благотворительного фонда.'],
+ ['SL8GZN',null,'care','Антонина','Смоленск',15,'Связала тёплые носки для соседа-ветерана.'],
+ ['BI2JPQ',null,'other','Добрый человек','Бишкек',3,'Починил скамейку у подъезда, теперь там снова сидят бабушки.']
+];
+const MESSAGES = [
+ 'Спасибо вам. Мир стал чуточку теплее — и это сделали вы.',
+ 'Ваш листочек уже шелестит на дереве. Добро не теряется — оно растёт.',
+ 'Маленькое дело — большой свет. Спасибо, что зажгли его.',
+ 'Где-то сегодня кто-то улыбнулся благодаря вам.',
+ 'Вы — звено, без которого цепочка бы прервалась.',
+ 'Доброта — это язык, который понимают все. Спасибо, что говорите на нём.',
+ 'Такие дела, как ваше, и делают дерево пышным.',
+ 'Вы подарили кому-то хороший день. Пусть и ваш будет таким же.',
+ 'Добро, которое вы отдали, обязательно вернётся. Немного позже и с другой стороны.',
+ 'Спасибо, что не прошли мимо.',
+ 'Самые большие перемены начинаются с маленьких поступков. С вашего, например.',
+ 'Вы сделали мир добрее ровно на одно доброе дело. Это очень много.',
+ 'Добро заразительно. Спасибо, что передали его дальше.',
+ 'Ваш поступок — как солнечный луч в пасмурный день.',
+ 'Кому-то стало легче. И это благодаря вам.',
+ 'Добрые люди есть. Вы — доказательство.',
+ 'Тёплое сердце — лучшее, что есть на свете. У вас оно именно такое.',
+ 'Сегодня вы чей-то герой, пусть и без плаща.',
+ 'Ваша доброта уже пустила корни.',
+ 'Спасибо за то, что вы такой человек.',
+ 'Вы посадили семечко. Посмотрите, как оно прорастёт.',
+ 'Маленькие дела не бывают маленькими для того, кому помогли.',
+ 'Пусть вам сегодня тоже повстречаются добрые люди.',
+ 'Ваш листочек — один из тех, что делают дерево живым.',
+ 'Мир держится на таких поступках, как ваш.',
+ 'Сделать добро — значит сказать миру «я здесь, и я рядом». Спасибо.',
+ 'Вы не просто помогли. Вы вдохновили следующего.',
+ 'Доброе дело никогда не бывает лишним. Спасибо!',
+ 'От вашего поступка уже кому-то светлее.',
+ 'Обнимаем вас. Мысленно, но очень крепко.'
+];
+const STAGES = [
+ {max:50,    name:'Молодое деревце', next:'Когда дел станет больше 50, крона заметно погустеет и прилетят птицы.'},
+ {max:500,   name:'Крона густеет',   next:'После 500 дел дерево станет по-настоящему пышным.'},
+ {max:2000,  name:'Пышная крона',    next:'После 2 000 дел дерево зацветёт.'},
+ {max:10000, name:'Дерево цветёт',   next:'После 10 000 дел на ветвях появятся плоды-сердечки и бабочки.'},
+ {max:Infinity,name:'Плоды-сердечки',next:'Дерево в полной силе. Спасибо всем, кто его вырастил!'}
+];
+const SEASONS = {spring:'Весна',summer:'Лето',autumn:'Осень',winter:'Зима'};
+const DAY = 864e5;
+
+/* ---------- Хранилище браузера ---------- */
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+
+/* ---------- Утилиты ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const plural = (n, f) => { const a=Math.abs(n)%100, b=a%10; return a>10&&a<20?f[2]:b>1&&b<5?f[1]:b===1?f[0]:f[2]; };
+const fmt = n => n.toLocaleString('ru-RU');
+function hash(str){ let h=2166136261; for(let i=0;i<str.length;i++){ h^=str.charCodeAt(i); h=Math.imul(h,16777619);} return h>>>0; }
+function rng(seed){ return () => { seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function mix(a, b, t){
+  const p = h => [1,3,5].map(i => parseInt(h.slice(i,i+2),16));
+  const A=p(a), B=p(b);
+  return '#'+A.map((v,i)=>Math.round(v+(B[i]-v)*t).toString(16).padStart(2,'0')).join('');
+}
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const isDark = () => document.documentElement.dataset.theme === 'dark' ||
+  (document.documentElement.dataset.theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+const rtf = new Intl.RelativeTimeFormat('ru', {numeric:'auto'});
+function ago(ts){ const d=Math.round((ts-Date.now())/DAY); return d===0 ? 'сегодня' : rtf.format(d,'day'); }
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),3200); }
+function heartPath(cx, cy, s){
+  return `M${cx} ${cy+s*.9}C${cx-s*1.25} ${cy+s*.05} ${cx-s*.95} ${cy-s*.95} ${cx} ${cy-s*.35}C${cx+s*.95} ${cy-s*.95} ${cx+s*1.25} ${cy+s*.05} ${cx} ${cy+s*.9}Z`;
+}
+const LEAF = heartPath(0, -7.2, 8); // кончик сердечка в точке (0,0), лопасти — наружу
+function genCode(){
+  const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let c;
+  do{ c=Array.from({length:6},()=>A[Math.floor(Math.random()*A.length)]).join(''); } while(byCode[c]);
+  return c;
+}
+
+/* ---------- Данные ---------- */
+let deeds = [], byCode = {}, chains = {};
+const now = Date.now();
+const seed = SEED.map(([code,parent,cat,name,city,days,text]) => ({code,parent,cat,name,city,text,created:now-days*DAY-hash(code)%40000000}));
+function load(){
+  const mine = store.get('dpc_deeds', []);
+  const hidden = new Set(store.get('dpc_hidden', []));
+  deeds = [...seed, ...mine].filter(d => !hidden.has(d.code)).sort((a,b)=>a.created-b.created);
+  byCode = Object.fromEntries(deeds.map(d=>[d.code,d]));
+  chains = {};
+  const rootOf = d => { let x=d, pos=1, guard=0; while(x.parent && byCode[x.parent] && guard++<500){ x=byCode[x.parent]; pos++; } return [x.code,pos]; };
+  deeds.forEach(d => { const [r,p]=rootOf(d); d.root=r; d.pos=p; (chains[r] ||= []).push(d); });
+}
+
+/* ---------- Логотип «Дерево из рук» ---------- */
+function logoSVG(season){
+  const tint = c => season==='autumn' ? mix(c,'#EFA96E',.5) : season==='winter' ? mix(c,'#DCE8F3',.35) : season==='spring' ? mix(c,'#ffffff',.12) : c;
+  const hearts = [[14,27,'help'],[21,16,'word'],[32,11,'nature'],[43,16,'care'],[50,25,'animals'],[27,22,'other'],[37,21,'help'],[32,26,'word']];
+  const fingers = [[24,43,15,30],[28,38,22,19],[32,37,32,14],[36,38,42,19],[40,42,49,28]];
+  let s = `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <circle cx="32" cy="32" r="31" fill="#A8D8F0"/>
+  <path d="M26 63 L26 52 Q22.5 47 23.5 40 L40.5 40 Q41.5 47 38 52 L38 63 Z" fill="#C9A88B"/>`;
+  fingers.forEach(([x1,y1,x2,y2]) => s += `<path d="M${x1} ${y1} Q${(x1+x2)/2+(x2>32?-2:x2<32?2:0)} ${(y1+y2)/2} ${x2} ${y2}" stroke="#C9A88B" stroke-width="4.2" stroke-linecap="round" fill="none"/>`);
+  hearts.forEach(([x,y,c],i) => s += `<path d="${heartPath(x,y,i>4?3.4:4.2)}" fill="${tint(CATS[c].color)}"/>`);
+  if(season==='winter') [[15,24],[22,13],[32,8],[43,13],[50,22]].forEach(([x,y]) => s += `<ellipse cx="${x}" cy="${y}" rx="3.4" ry="1.7" fill="#fff"/>`);
+  if(season==='spring') [[26,13],[38,12],[18,21],[47,20]].forEach(([x,y]) => s += `<circle cx="${x}" cy="${y}" r="1.8" fill="#fff"/><circle cx="${x}" cy="${y}" r=".8" fill="#F6C66B"/>`);
+  return s + '</svg>';
+}
+function renderLogos(season){
+  const svg = logoSVG(season);
+  $('#logoTop').innerHTML = svg; $('#logoBottom').innerHTML = svg;
+  $('#favicon').href = 'data:image/svg+xml,' + encodeURIComponent(svg.replace('aria-hidden="true"',''));
+}
+
+/* ---------- Сезоны ---------- */
+const m = new Date().getMonth();
+let season = m>=2&&m<=4 ? 'spring' : m>=5&&m<=7 ? 'summer' : m>=8&&m<=10 ? 'autumn' : 'winter';
+function seasonColor(hex){
+  if(season==='spring') return mix(hex,'#FFFFFF',.15);
+  if(season==='autumn') return mix(hex,'#EFB27C',.5);
+  if(season==='winter') return mix(hex,'#E4EDF6',.5);
+  return hex;
+}
+function setSeason(s){
+  season = s; document.body.dataset.season = s;
+  document.querySelectorAll('[data-season].chip').forEach(b => b.setAttribute('aria-pressed', b.dataset.season===s));
+  renderLogos(s); renderTree(); renderFx();
+}
+
+/* ---------- Дерево ---------- */
+const svg = $('#tree');
+const treeCache = {};
+function buildTree(depth){
+  const r = rng(20261014 + depth), segs = [];
+  const baseLen = depth<=6 ? 128 : depth===7 ? 118 : 108;
+  (function grow(x, y, ang, len, w, d){
+    const x2 = x + Math.cos(ang)*len, y2 = y + Math.sin(ang)*len;
+    segs.push({x1:x,y1:y,x2,y2,w,d,ang});
+    if(d >= depth) return;
+    const n = d < 3 && r() < .35 ? 3 : 2;
+    for(let i=0;i<n;i++){
+      const spread = n===3 ? (i-1)*.5 : (i===0?-1:1)*(.34+r()*.24);
+      const lean = (-Math.PI/2 - ang)*.12;
+      grow(x2, y2, ang + spread + lean + (r()-.5)*.18, len*(.78+r()*.1), Math.max(w*.66,1.4), d+1);
+    }
+  })(500, 735, -Math.PI/2, baseLen, 36, 1);
+  const anchors = [];
+  segs.filter(s => s.d >= depth-2).forEach((s, i) => {
+    [.4,.75,1].forEach((t, k) => {
+      const side = (i+k)%2 ? 1 : -1;
+      const px = s.x1+(s.x2-s.x1)*t, py = s.y1+(s.y2-s.y1)*t;
+      const nx = -Math.sin(s.ang)*side, ny = Math.cos(s.ang)*side;
+      const off = 5 + r()*6;
+      anchors.push({x:px+nx*off, y:py+ny*off, rot:(s.ang*180/Math.PI)+90+side*(28+r()*30)});
+    });
+  });
+  anchors.sort((a,b) => Math.atan2(a.y-420,a.x-500) - Math.atan2(b.y-420,b.x-500));
+  return {segs, anchors};
+}
+let previewCount = 0, lastBorn = null;
+function stageIndex(n){ return STAGES.findIndex(s => n <= s.max); }
+
+function renderTree(){
+  const real = deeds;
+  const total = Math.max(real.length, previewCount);
+  const depth = total <= 50 ? 6 : total <= 500 ? 7 : 8;
+  const T = treeCache[depth] ||= buildTree(depth);
+  const {segs, anchors} = T, N = anchors.length;
+  const dark = isDark();
+
+  // земля
+  $('#gGround').innerHTML = `<ellipse cx="500" cy="770" rx="560" ry="70" fill="var(--ground)"/>
+    <ellipse cx="500" cy="742" rx="120" ry="16" fill="${dark?'rgba(0,0,0,.18)':'rgba(120,100,80,.12)'}"/>`;
+  // ветви
+  $('#gBranches').innerHTML = segs.map(s => `<line class="br" x1="${s.x1.toFixed(1)}" y1="${s.y1.toFixed(1)}" x2="${s.x2.toFixed(1)}" y2="${s.y2.toFixed(1)}" stroke-width="${s.w.toFixed(1)}"/>`).join('');
+  // снег
+  $('#gSnow').innerHTML = season==='winter' ? segs.filter(s => s.w > 3.5 && Math.abs(Math.cos(s.ang)) > .25)
+      .map(s => `<line class="snowcap" x1="${s.x1.toFixed(1)}" y1="${(s.y1-s.w*.42).toFixed(1)}" x2="${s.x2.toFixed(1)}" y2="${(s.y2-s.w*.42).toFixed(1)}" stroke-width="${(s.w*.42).toFixed(1)}"/>`).join('')
+      + `<ellipse cx="500" cy="752" rx="420" ry="34" fill="#fff" opacity=".7"/>` : '';
+
+  // густота кроны для больших объёмов
+  const crown = seasonColor('#A9DDAB');
+  svg.style.setProperty('--crown', crown);
+  $('#gMass').innerHTML = total > 400 ? anchors.filter((_,i)=>i%6===0).map(a => `<circle cx="${a.x.toFixed(0)}" cy="${a.y.toFixed(0)}" r="${total>2000?48:34}" fill="url(#crownMass)"/>`).join('') : '';
+
+  // листочки
+  const scale = total < 150 ? 2.3 : total < 800 ? 1.25 : total < 3000 ? .85 : .65;
+  const ordered = [...real].sort((a,b) => (byCode[a.root].created - byCode[b.root].created) || (a.pos - b.pos) || (a.created-b.created));
+  let html = '';
+  const leafAt = (a, jitter, color, attrs, cls, d) => {
+    const x = a.x + jitter[0], y = a.y + jitter[1];
+    return `<g class="leaf${cls}" ${attrs} transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${(a.rot+jitter[2]).toFixed(0)}) scale(${scale})"><g class="in"><path d="${LEAF}" fill="${color}" style="--d:${d}s"/></g></g>`;
+  };
+  const RENDER_CAP = 3200;
+  const ghosts = Math.min(Math.max(0, total - real.length), RENDER_CAP - real.length);
+  const gr = rng(77);
+  const catKeys = Object.keys(CATS);
+  for(let j=0;j<ghosts;j++){
+    const idx = (j*7919) % N, layer = Math.floor(j / N) + 1;
+    const a = anchors[idx];
+    const jit = [(gr()-.5)*16*layer, (gr()-.5)*16*layer, (gr()-.5)*60];
+    html += leafAt(a, jit, seasonColor(CATS[catKeys[j%6]].color), '', ' ghost', 0);
+  }
+  ordered.forEach((d, i) => {
+    const slot = real.length <= N ? Math.floor(i * N / real.length) : i % N;
+    const layer = real.length <= N ? 0 : Math.floor(i / N);
+    const hr = rng(hash(d.code));
+    const jit = layer ? [(hr()-.5)*14*layer,(hr()-.5)*14*layer,(hr()-.5)*40] : [0,0,0];
+    html += leafAt(anchors[slot], jit, seasonColor(CATS[d.cat].color), `data-code="${d.code}" tabindex="-1"`, '', ((hash(d.code)%45)/10).toFixed(1));
+  });
+  $('#gLeaves').innerHTML = html;
+  svg.classList.toggle('sway', total <= 800 && !reduceMotion);
+
+  // декор по стадиям и сезонам
+  const st = stageIndex(total);
+  let deco = '';
+  const dr = rng(5);
+  const pickAnchor = () => anchors[Math.floor(dr()*N)];
+  if(st >= 1 || season === 'spring'){
+    const count = season==='spring' ? 40 + (st>=3?100:0) : (st>=3 ? 120 : 0);
+    for(let i=0;i<count;i++){ const a=pickAnchor(); deco += flower(a.x+(dr()-.5)*14, a.y+(dr()-.5)*14, season==='spring'&&i%2 ? '#FBD3DE' : '#FFFFFF'); }
+  }
+  if(st >= 1){
+    const birdCol = dark ? '#DCE6F5' : '#5A6E86';
+    [[120,120,0],[60,170,-9],[180,90,-17]].forEach(([x,y,del]) => deco += `<g class="bird" style="animation-delay:${del}s"><path d="M${x} ${y} q8 -8 16 0 q8 -8 16 0" stroke="${birdCol}" stroke-width="2.4" fill="none" stroke-linecap="round"/></g>`);
+  }
+  if(st >= 4){ for(let i=0;i<36;i++){ const a=pickAnchor(); deco += `<path d="${heartPath(a.x,a.y+8,7)}" fill="#F08FA6" stroke="#fff" stroke-width="1"/>`; } }
+  if(st >= 4 || season === 'summer'){
+    const n = season==='summer' ? 3 : 0; const extra = st>=4 ? 4 : 0;
+    for(let i=0;i<n+extra;i++){ const x=150+dr()*700, y=180+dr()*380; deco += butterfly(x,y,['#F5B99C','#C8BBEE','#F4B5C6','#F3DC8E'][i%4], -i*1.7); }
+  }
+  $('#gDeco').innerHTML = deco;
+
+  // текст о стадии
+  const s = STAGES[st];
+  $('#stage').innerHTML = previewCount
+    ? `Так будет выглядеть дерево, когда на нём будет <b>${fmt(previewCount)}</b> ${plural(previewCount,['листочек','листочка','листочков'])}: <b>${s.name.toLowerCase()}</b>. Сейчас ${season==='winter'?'зима':SEASONS[season].toLowerCase()}, листочки-дела не опадают ни в одно время года.`
+    : `<b>${s.name}.</b> На дереве ${fmt(real.length)} ${plural(real.length,['листочек','листочка','листочков'])}. ${s.next}`;
+
+  if(lastBorn){ const el = svg.querySelector(`[data-code="${lastBorn}"]`); if(el){ el.classList.add('born','shine'); setTimeout(()=>el.classList.remove('shine'),5000);} lastBorn=null; }
+}
+function flower(x,y,c){
+  let p=''; for(let k=0;k<5;k++){ const a=k*Math.PI*2/5; p+=`<circle cx="${(x+Math.cos(a)*3.2).toFixed(1)}" cy="${(y+Math.sin(a)*3.2).toFixed(1)}" r="2.6" fill="${c}"/>`; }
+  return p + `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.7" fill="#F6C66B"/>`;
+}
+function butterfly(x,y,c,del){
+  return `<g class="butterfly" style="animation-delay:${del}s"><g transform="translate(${x.toFixed(0)} ${y.toFixed(0)})">
+    <ellipse cx="-5" cy="-3" rx="6" ry="4.5" fill="${c}"/><ellipse cx="5" cy="-3" rx="6" ry="4.5" fill="${c}"/>
+    <ellipse cx="-4" cy="4" rx="4" ry="3" fill="${c}"/><ellipse cx="4" cy="4" rx="4" ry="3" fill="${c}"/>
+    <rect x="-.9" y="-7" width="1.8" height="14" rx=".9" fill="#5A6E86"/></g></g>`;
+}
+function renderFx(){
+  const fx = $('#fx'); fx.innerHTML = '';
+  if(reduceMotion) return;
+  if(season==='winter'){
+    for(let i=0;i<34;i++){ const s=document.createElement('span'); s.className='flake'; s.style.left=(Math.random()*100)+'%'; s.style.animationDuration=(7+Math.random()*8)+'s'; s.style.animationDelay=(-Math.random()*14)+'s'; s.style.opacity=.5+Math.random()*.5; fx.appendChild(s); }
+  } else if(season==='autumn'){
+    const cols=['#EFB27C','#F3C98B','#E99A7A','#F5D29A'];
+    for(let i=0;i<10;i++){ const s=document.createElement('span'); s.className='fleaf'; s.style.background=cols[i%4]; s.style.left=(10+Math.random()*80)+'%'; s.style.animationDuration=(10+Math.random()*8)+'s'; s.style.animationDelay=(-Math.random()*16)+'s'; fx.appendChild(s); }
+  }
+}
+
+/* Масштаб и перемещение */
+const VB0 = {x:0,y:0,w:1000,h:780}; let vb = {...VB0};
+const applyVB = () => svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+function zoom(f){
+  const cx = vb.x+vb.w/2, cy = vb.y+vb.h/2;
+  vb.w = Math.min(1000, Math.max(220, vb.w*f)); vb.h = vb.w*.78;
+  vb.x = cx-vb.w/2; vb.y = cy-vb.h/2; clampVB(); applyVB(); closeCard();
+}
+function clampVB(){ vb.x=Math.min(Math.max(vb.x,-200),1200-vb.w); vb.y=Math.min(Math.max(vb.y,-100),880-vb.h); }
+$('#zIn').onclick = () => zoom(.7); $('#zOut').onclick = () => zoom(1/.7);
+$('#zReset').onclick = () => { vb={...VB0}; applyVB(); closeCard(); };
+let drag = null, dragged = false;
+svg.addEventListener('pointerdown', e => { drag = {x:e.clientX,y:e.clientY,vx:vb.x,vy:vb.y}; dragged=false; });
+svg.addEventListener('pointermove', e => {
+  if(!drag || vb.w >= 1000) return;
+  const dx=e.clientX-drag.x, dy=e.clientY-drag.y;
+  if(!dragged && Math.hypot(dx,dy) < 5) return;
+  dragged = true; svg.classList.add('dragging'); svg.setPointerCapture(e.pointerId);
+  const k = vb.w / svg.getBoundingClientRect().width;
+  vb.x = drag.vx - dx*k; vb.y = drag.vy - dy*k; clampVB(); applyVB();
+});
+const endDrag = () => { drag=null; svg.classList.remove('dragging'); };
+svg.addEventListener('pointerup', endDrag); svg.addEventListener('pointercancel', endDrag);
+
+/* Карточка листочка */
+const card = $('#leafCard');
+function chainLine(d){
+  const len = chains[d.root].length;
+  if(len === 1) return 'Начало новой цепочки';
+  return d.pos === 1 ? `Начало цепочки из ${len} ${plural(len,['звена','звеньев','звеньев'])}` : `${d.pos}-е звено цепочки из ${len}, начало: ${esc(byCode[d.root].city)}`;
+}
+function catTag(c){ return `<span class="cat-tag" style="background:${CATS[c].color}">${CATS[c].name}</span>`; }
+function openCard(code){
+  const d = byCode[code]; if(!d) return;
+  const el = svg.querySelector(`[data-code="${code}"]`);
+  svg.classList.add('focus');
+  svg.querySelectorAll('.leaf.hl').forEach(x=>x.classList.remove('hl'));
+  chains[d.root].forEach(x => svg.querySelector(`[data-code="${x.code}"]`)?.classList.add('hl'));
+  card.innerHTML = `<button class="close" aria-label="Закрыть">×</button>
+    ${catTag(d.cat)}
+    <p style="margin:.7rem 0 .5rem">${esc(d.text)}</p>
+    <div class="meta">${esc(d.name)}, ${esc(d.city)}, ${ago(d.created)}</div>
+    <div class="meta" style="margin-bottom:.8rem">${chainLine(d)}</div>
+    <button class="link-btn" data-continue="${d.code}">Продолжить эту цепочку</button>`;
+  card.classList.add('open');
+  const wrap = $('#treeWrap').getBoundingClientRect();
+  const r = el ? el.getBoundingClientRect() : {left:wrap.left+wrap.width/2, top:wrap.top+100, width:0, height:0};
+  let left = r.left - wrap.left + r.width/2 - 170, top = r.top - wrap.top + r.height + 10;
+  left = Math.max(10, Math.min(left, wrap.width - 350));
+  if(top > wrap.height - 220) top = r.top - wrap.top - 230;
+  card.style.left = left+'px'; card.style.top = Math.max(10, top)+'px';
+  card.querySelector('.close').onclick = closeCard;
+  card.querySelector('.close').focus({preventScroll:true});
+}
+function closeCard(){ card.classList.remove('open'); svg.classList.remove('focus'); svg.querySelectorAll('.leaf.hl').forEach(x=>x.classList.remove('hl')); }
+svg.addEventListener('click', e => {
+  if(dragged){ dragged=false; return; }
+  const leaf = e.target.closest('.leaf[data-code]');
+  leaf ? openCard(leaf.dataset.code) : closeCard();
+});
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeCard(); });
+document.addEventListener('click', e => {
+  const c = e.target.closest('[data-continue]');
+  if(c){ setInspiration(c.dataset.continue, true); closeCard(); }
+});
+
+$('#findMine').onclick = () => {
+  const mine = store.get('dpc_mine', []).filter(c => byCode[c]);
+  if(!mine.length){ toast('С этого устройства ещё не публиковали добрых дел. Самое время начать!'); return; }
+  if(previewCount){ previewCount=0; syncPreviewChips(); renderTree(); }
+  $('#tree-section').scrollIntoView({behavior:reduceMotion?'auto':'smooth'});
+  setTimeout(() => { vb={...VB0}; applyVB(); const c = mine[mine.length-1]; const el = svg.querySelector(`[data-code="${c}"]`); el?.classList.add('shine'); setTimeout(()=>el?.classList.remove('shine'),4000); openCard(c); }, 500);
+};
+
+/* ---------- Лента ---------- */
+function renderFeed(){
+  const reported = new Set(store.get('dpc_reported', []));
+  const list = [...deeds].reverse().slice(0, 14);
+  $('#feed').innerHTML = list.map(d => `
+    <article class="note" style="--c:${CATS[d.cat].color}">
+      <div class="row">${catTag(d.cat)}<span class="meta">${ago(d.created)}</span></div>
+      <p>${esc(d.text)}</p>
+      <div class="meta">${esc(d.name)}, ${esc(d.city)}<br>${chainLine(d)}</div>
+      <div class="row">
+        <button class="link-btn" data-continue="${d.code}">Продолжить эту цепочку</button>
+        <button class="report" data-report="${d.code}" ${reported.has(d.code)?'disabled':''}>${reported.has(d.code)?'Жалоба отправлена':'Пожаловаться'}</button>
+      </div>
+    </article>`).join('');
+  $('#leafList').innerHTML = deeds.map(d => `<li>${esc(d.text)} <span class="meta">(${esc(d.name)}, ${esc(d.city)})</span></li>`).join('');
+}
+$('#feed').addEventListener('click', e => {
+  const b = e.target.closest('[data-report]'); if(!b) return;
+  const rep = store.get('dpc_reported', []); rep.push(b.dataset.report); store.set('dpc_reported', rep);
+  b.textContent = 'Жалоба отправлена'; b.disabled = true;
+  toast('Спасибо! Модератор проверит это доброе дело.');
+});
+
+/* ---------- Счётчик ---------- */
+function renderCounter(){
+  const n = deeds.length, c = new Set(deeds.map(d=>d.city)).size;
+  $('#counter').innerHTML = `Уже <b>${fmt(n)}</b> ${plural(n,['доброе дело','добрых дела','добрых дел'])} в <b>${c}</b> ${c%10===1&&c%100!==11?'городе':'городах'}`;
+}
+
+/* ---------- Карта ---------- */
+let map, mapLayer, tiles;
+function initMap(){
+  if(!window.L){ $('#map').innerHTML = '<div class="map-fallback">Карта не загрузилась. Проверьте подключение к интернету и обновите страницу.</div>'; return; }
+  $('#map').innerHTML = '';
+  map = L.map('map', {scrollWheelZoom:false, worldCopyJump:true}).setView([54, 60], 3);
+  setTiles();
+  mapLayer = L.layerGroup().addTo(map);
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { setTiles(); renderTree(); });
+}
+function setTiles(){
+  if(!map) return;
+  if(tiles) map.removeLayer(tiles);
+  tiles = L.tileLayer(`https://{s}.basemaps.cartocdn.com/${isDark()?'dark_all':'light_all'}/{z}/{x}/{y}{r}.png`, {
+    attribution:'&copy; OpenStreetMap, &copy; CARTO', subdomains:'abcd', maxZoom:12
+  }).addTo(map);
+}
+function arcPoints(a, b){
+  const pts = [], [la1,lo1]=a, [la2,lo2]=b;
+  const mx=(la1+la2)/2, my=(lo1+lo2)/2, dx=la2-la1, dy=lo2-lo1, k=.22;
+  const cx = mx - dy*k*.5, cy = my + dx*k;
+  for(let t=0;t<=1.001;t+=.05){ pts.push([(1-t)*(1-t)*la1+2*(1-t)*t*cx+t*t*la2, (1-t)*(1-t)*lo1+2*(1-t)*t*cy+t*t*lo2]); }
+  return pts;
+}
+function renderChainSelect(){
+  const sel = $('#chainSelect'), cur = sel.value || 'all';
+  const multi = Object.values(chains).filter(c => c.length > 1).sort((a,b)=>b.length-a.length);
+  sel.innerHTML = `<option value="all">Все цепочки</option><option value="top">Самые длинные</option>` +
+    multi.map(c => `<option value="${c[0].code}">Из города ${esc(c[0].city)}, ${c.length} ${plural(c.length,['звено','звена','звеньев'])}</option>`).join('');
+  sel.value = [...sel.options].some(o=>o.value===cur) ? cur : 'all';
+}
+function renderMap(){
+  if(!map) return;
+  mapLayer.clearLayers();
+  const v = $('#chainSelect').value;
+  let set = deeds;
+  if(v === 'top'){ const top = Object.values(chains).sort((a,b)=>b.length-a.length).slice(0,3).map(c=>c[0].code); set = deeds.filter(d => top.includes(d.root)); }
+  else if(v !== 'all') set = deeds.filter(d => d.root === v);
+  const byCity = {};
+  set.forEach(d => (byCity[d.city] ||= []).push(d));
+  set.forEach(d => {
+    const p = d.parent && byCode[d.parent]; if(!p || p.city===d.city) return;
+    const a = CITIES[p.city], b = CITIES[d.city]; if(!a||!b) return;
+    L.polyline(arcPoints(a,b), {color:mix(CATS[d.cat].color,'#5A7FA0',.35), weight:3, opacity:.9, className:'arc'}).addTo(mapLayer);
+  });
+  Object.entries(byCity).forEach(([city, list]) => {
+    const c = CITIES[city]; if(!c) return;
+    L.circleMarker(c, {radius:6+Math.sqrt(list.length)*3, color:'#fff', weight:2, fillColor:'#F2A88B', fillOpacity:.9})
+     .bindPopup(`<strong>${esc(city)}</strong>: ${list.length} ${plural(list.length,['доброе дело','добрых дела','добрых дел'])}<ul>${list.slice(-5).reverse().map(d=>`<li>${esc(d.text)}</li>`).join('')}</ul>`)
+     .addTo(mapLayer);
+  });
+  if(v !== 'all'){ const pts = set.map(d=>CITIES[d.city]).filter(Boolean); if(pts.length) map.fitBounds(pts, {padding:[50,50], maxZoom:6}); }
+  else map.setView([54, 60], 3);
+}
+$('#chainSelect').addEventListener('change', renderMap);
+
+/* ---------- Форма ---------- */
+$('#cats').innerHTML = Object.entries(CATS).map(([k,c],i) =>
+  `<input type="radio" name="cat" id="cat-${k}" value="${k}" ${i===0?'checked':''}><label for="cat-${k}" style="--c:${c.color}"><span class="dot"></span>${c.name}</label>`).join('');
+$('#cityList').innerHTML = Object.keys(CITIES).sort((a,b)=>a.localeCompare(b,'ru')).map(c=>`<option value="${c}">`).join('');
+$('#fText').addEventListener('input', e => $('#fCount').textContent = e.target.value.length);
+$('#fFrom').addEventListener('input', e => { e.target.value = e.target.value.toUpperCase(); setInspiration(e.target.value, false); });
+
+function setInspiration(code, scroll){
+  code = (code||'').toUpperCase().trim();
+  const d = byCode[code], box = $('#inspireCard');
+  if(d){
+    $('#fFrom').value = code;
+    box.innerHTML = `<strong>Вас вдохновило это доброе дело</strong>${esc(d.text)}<div class="meta" style="color:#4A5A70;margin-top:.4rem">${esc(d.name)}, ${esc(d.city)}. Ваш поступок станет ${d.pos+1}-м звеном.</div>`;
+    box.hidden = false;
+  } else box.hidden = true;
+  if(scroll){ $('#share').scrollIntoView({behavior:reduceMotion?'auto':'smooth'}); setTimeout(()=>$('#fText').focus({preventScroll:true}), 600); }
+}
+
+const BAD = /(х[уy][йеёяюи]|п[иi][зс]д|[её]б[ауоиы]|бл[яa]д|сук[аи]|муд[аи]к|г[ао]вн)/i;
+const PHONE = /(\+?\d[\d\-\s()]{8,}\d)/;
+const LINK = /(https?:\/\/|www\.|\.(ru|com|рф|net|org)\b|@\w{3,})/i;
+$('#deedForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const err = $('#fError'); err.textContent = '';
+  const text = $('#fText').value.trim().replace(/\s+/g,' ');
+  const cat = document.querySelector('input[name=cat]:checked')?.value;
+  const name = $('#fName').value.trim() || 'Добрый человек';
+  const cityRaw = $('#fCity').value.trim();
+  const city = Object.keys(CITIES).find(c => c.toLowerCase() === cityRaw.toLowerCase());
+  const from = $('#fFrom').value.trim().toUpperCase();
+  const fail = (msg, el) => { err.textContent = msg; el?.focus(); };
+  if(text.length < 10) return fail('Расскажите чуть подробнее: нужно хотя бы 10 знаков.', $('#fText'));
+  if(BAD.test(text) || BAD.test(name)) return fail('Уберите, пожалуйста, грубые слова. Здесь место только для доброго.', $('#fText'));
+  if(PHONE.test(text) || LINK.test(text)) return fail('Уберите из текста телефоны, ссылки и адреса. Так мы бережём личные данные.', $('#fText'));
+  if(!city) return fail('Выберите город из подсказок. Если вашего города нет, укажите ближайший крупный.', $('#fCity'));
+  if(from && !byCode[from]) return fail('Доброе дело с таким кодом не найдено. Проверьте код или оставьте поле пустым.', $('#fFrom'));
+  if(!$('#fAgree').checked) return fail('Отметьте согласие с правилами сообщества.', $('#fAgree'));
+  const times = store.get('dpc_times', []).filter(t => Date.now()-t < 36e5);
+  if(times.length >= 5) return fail('Вы уже рассказали о пяти добрых делах за час. Спасибо! Возвращайтесь чуть позже.');
+
+  const deed = {code:genCode(), parent:from||null, cat, name:name.slice(0,40), city, text:text.slice(0,500), created:Date.now()};
+  const mine = store.get('dpc_deeds', []); mine.push(deed); store.set('dpc_deeds', mine);
+  store.set('dpc_mine', [...store.get('dpc_mine', []), deed.code]);
+  times.push(Date.now()); store.set('dpc_times', times);
+
+  load(); previewCount = 0; syncPreviewChips(); lastBorn = deed.code; vb={...VB0}; applyVB();
+  renderAll();
+  e.target.reset(); $('#fCount').textContent = '0'; $('#inspireCard').hidden = true;
+  history.replaceState(null, '', location.pathname);
+  $('#tree-section').scrollIntoView({behavior:reduceMotion?'auto':'smooth'});
+  setTimeout(() => showThanks(byCode[deed.code]), reduceMotion ? 200 : 1600);
+});
+
+function shareLinks(url, text){
+  const u = encodeURIComponent(url), t = encodeURIComponent(text);
+  return `<a class="btn btn-line" target="_blank" rel="noopener" href="https://t.me/share/url?url=${u}&text=${t}">Telegram</a>
+    <a class="btn btn-line" target="_blank" rel="noopener" href="https://vk.com/share.php?url=${u}&title=${t}">ВКонтакте</a>
+    <a class="btn btn-line" target="_blank" rel="noopener" href="https://wa.me/?text=${t}%20${u}">WhatsApp</a>`;
+}
+function showThanks(d){
+  const msg = MESSAGES[Math.floor(Math.random()*MESSAGES.length)];
+  const len = chains[d.root].length;
+  const chainMsg = d.parent
+    ? `Вы стали ${d.pos}-м звеном цепочки, которая началась в городе ${esc(byCode[d.root].city)}!`
+    : 'Вы посадили новую ветку. Посмотрим, как далеко она вырастет!';
+  const url = location.href.split(/[?#]/)[0] + '?from=' + d.code;
+  $('#dlgBody').innerHTML = `
+    <svg class="big-heart" viewBox="0 0 64 64" aria-hidden="true"><path d="${heartPath(32,30,22)}" fill="${CATS[d.cat].color}"/></svg>
+    <h3 id="dlgTitle">Ваш листочек вырос!</h3>
+    <p class="warm">${msg}</p>
+    <p>${chainMsg}</p>
+    <p class="meta" style="margin-bottom:.3rem">Код вашего доброго дела</p>
+    <div class="code">${d.code}</div>
+    <p style="margin-bottom:.5rem"><strong>Передайте добро дальше.</strong> Отправьте ссылку другу, и его поступок продолжит вашу цепочку.</p>
+    <div class="copy-row"><input id="shareUrl" readonly value="${esc(url)}" aria-label="Ссылка для продолжения цепочки"><button class="btn btn-main" id="copyBtn" style="padding:.55rem 1.1rem">Копировать</button></div>
+    <div class="share" style="justify-content:center;margin-bottom:1.2rem">${shareLinks(url,'Я сделал доброе дело. Продолжишь цепочку?')}</div>
+    <button class="btn btn-soft" id="dlgClose" style="border-color:var(--line)">Посмотреть мой листочек</button>`;
+  const dlg = $('#dlg'); dlg.showModal();
+  $('#copyBtn').onclick = async () => { try{ await navigator.clipboard.writeText(url); }catch(e){ $('#shareUrl').select(); document.execCommand('copy'); } toast('Ссылка скопирована'); };
+  $('#dlgClose').onclick = () => { dlg.close(); openCard(d.code); };
+  if([10,25,50,100].includes(len)) setTimeout(()=>toast(`Цепочка из города ${byCode[d.root].city} выросла до ${len} звеньев!`), 800);
+}
+$('#dlg').addEventListener('click', e => { if(e.target.id === 'dlg') e.target.close(); });
+
+/* ---------- Переключатели ---------- */
+document.querySelectorAll('.chip[data-season]').forEach(b => b.onclick = () => setSeason(b.dataset.season));
+function syncPreviewChips(){ document.querySelectorAll('.chip[data-preview]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.preview === previewCount)); }
+document.querySelectorAll('.chip[data-preview]').forEach(b => b.onclick = () => {
+  previewCount = +b.dataset.preview; syncPreviewChips(); closeCard(); renderTree();
+});
+$('#burger').onclick = () => { const n=$('#nav'), o=n.classList.toggle('open'); $('#burger').setAttribute('aria-expanded', o); };
+$('#nav').addEventListener('click', e => { if(e.target.tagName==='A'){ $('#nav').classList.remove('open'); $('#burger').setAttribute('aria-expanded','false'); } });
+$('#siteShare').innerHTML = shareLinks(location.href.split(/[?#]/)[0], 'Добро по цепочке: маленькие добрые дела растят большое дерево');
+
+/* Облака и звёзды */
+(function sky(){
+  const cl = $('#clouds');
+  [[8,90,60],[24,140,85],[46,110,70],[62,170,95],[16,80,110]].forEach(([top,w,dur],i) => {
+    const d = document.createElement('div'); d.className='cloud';
+    d.style.top = top+'%'; d.style.animationDuration = dur+'s'; d.style.animationDelay = (-i*dur/4)+'s';
+    d.innerHTML = `<svg width="${w}" viewBox="0 0 120 50"><g fill="#fff" opacity=".9"><ellipse cx="40" cy="32" rx="30" ry="16"/><ellipse cx="68" cy="24" rx="26" ry="20"/><ellipse cx="90" cy="34" rx="24" ry="13"/></g></svg>`;
+    cl.appendChild(d);
+  });
+  const st = $('#stars');
+  for(let i=0;i<60;i++){ const s=document.createElement('span'); s.className='star'; s.style.left=Math.random()*100+'%'; s.style.top=Math.random()*60+'%'; s.style.animationDelay=(-Math.random()*3)+'s'; st.appendChild(s); }
+})();
+
+/* ---------- Запуск ---------- */
+function renderAll(){ renderCounter(); renderTree(); renderFeed(); renderChainSelect(); renderMap(); }
+load();
+setSeason(season);
+initMap();
+renderAll();
+
+const from = new URLSearchParams(location.search).get('from');
+if(from && byCode[from.toUpperCase()]){
+  const d = byCode[from.toUpperCase()];
+  setInspiration(d.code, false);
+  const hb = $('#heroInspired');
+  hb.innerHTML = `<strong>Вас вдохновило это доброе дело</strong>${esc(d.text)}<div class="meta" style="color:#5F6B7C;margin:.4rem 0 .6rem">${esc(d.name)}, ${esc(d.city)}</div><a class="link-btn" href="#share">Продолжить цепочку своим поступком</a>`;
+  hb.hidden = false;
+  setTimeout(() => openCard(d.code), 600);
+}
+})();
+</script>
+</body>
+</html>
